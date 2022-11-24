@@ -1,0 +1,5 @@
+# Project exclude paths
+/c_realisation/cmake-build-debug/
+/c_realisation/CMakeLists.txt
+.idea
+/ddlog_realisation/reachability_ddlog/
