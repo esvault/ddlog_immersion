@@ -1,0 +1,97 @@
+import group
+
+typedef expanded_int = INFINITY
+		     | Score { value: bit<64> }
+		     | NEGINFINITY
+
+typedef int = bit<64>
+typedef Node_ID = string
+typedef Rsc_ID = string
+typedef Const_ID = string
+
+input relation Node (id: Node_ID)
+input relation Rsc (id: Rsc_ID)
+input relation LocationConstraint (id: Const_ID, rsc: Rsc_ID, node: Node_ID, score: float)
+input relation ColocationConstraint (id: Const_ID, rsc: Rsc_ID, with_rsc: Rsc_ID)
+input relation OrderConstraint (id: Const_ID, first: Rsc_ID, then: Rsc_ID)
+
+relation LocationOut (rsc: Rsc_ID, node: Node_ID)
+relation ColocationOut (rsc: Rsc_ID, with_rsc: Rsc_ID, node: Node_ID)
+relation TotalLocation (rsc: Rsc_ID, node: Node_ID)
+output relation FirstStarts (rsc: Rsc_ID)
+output relation StartActionOrder (rsc: Rsc_ID, order: u64)
+
+LocationOut (rsc, target_node) :- 
+	LocationConstraint (.rsc = rsc, .node = node, .score = score),
+	var rsc_group = (node, score).group_by(rsc),
+	(var target_node, var max_score) = rsc_group.arg_max(|node_score| node_score.1).
+
+LocationOut (rsc, target_node) :- 
+	Rsc(rsc), 
+	Node(target_node),
+	not LocationConstraint (_, rsc, _, _).
+
+ColocationOut (rsc, with_rsc, node) :-
+	ColocationConstraint (.rsc = rsc, .with_rsc = with_rsc),
+	LocationOut(with_rsc, node).
+
+TotalLocation (rsc, node) :-
+	ColocationOut (.rsc = rsc, .node = node).
+
+TotalLocation (rsc, node) :-
+	LocationOut (.rsc = rsc, .node = node),
+	not ColocationOut (rsc, _, _).
+
+FirstStarts (rsc) :-
+	OrderConstraint (_, rsc, _),
+	not OrderConstraint (_, _, rsc).
+
+StartActionOrder (rsc, 1) :-
+	FirstStarts (rsc).
+
+StartActionOrder (then, incr(i)) :-
+	var i = 1,
+	OrderConstraint (_, first, then).
+
+/*StartActionOrder (first, i) :-
+	StartActionOrder (_, index),
+	OrderConstraint (_, first, then),
+	not FirstStarts (first),
+	var i = index.group_by().max() + 1.
+*/
+
+function incr(i: mut int): int {
+	i = i + 1;
+	i
+}
+	
+function my_arg_max(g: Group<'K, 'V>, f: function('V): expanded_int): 'V {
+    var max_arg = g.first();
+    var max_val = f(g.first());
+    for ((x, _) in g) {
+        var v = f(x);
+	match (v) {
+		INFINITY -> {
+			max_val = v;
+			max_arg = x;
+		},
+		Score{u} -> {
+			match (max_val) {
+				NEGINFINITY -> {
+					max_val = v;
+					max_arg = x;
+				},
+				Score{m} -> {
+					if (u > m) {
+						max_val = v;
+						max_arg = x;
+					}
+				},
+				_ -> ()
+			}
+		},
+		_ -> ()
+	}
+    };
+    max_arg
+}

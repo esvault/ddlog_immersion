@@ -1,0 +1,9 @@
+start;
+
+insert Cathetus1(3);
+insert Cathetus2(4);
+insert Hypotenuse(5);
+
+commit;
+
+dump Triangular;

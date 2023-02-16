@@ -1,0 +1,38 @@
+typedef UUID    = bit<128>
+typedef IP4     = bit<32>
+typedef NetMask = bit<32>
+
+input relation Host(id: UUID, name: string, ip: IP4)
+input relation Subnet(id: UUID, prefix: IP4, mask: NetMask)
+
+output relation HostInSubnet(host: UUID, subnet: UUID)
+
+HostInSubnet(host_id, subnet_id) :- Host(host_id, _, host_ip),
+				    Subnet(subnet_id, prefix, mask),
+				    ((host_ip & mask) == prefix).
+
+typedef INT = bit<64>
+
+function pow(x: float, n: INT): float {
+    var res = 1;
+    var temp_vec: Vec<string> = vec_with_capacity(n);
+    for (i in temp_vec) {
+	res = res * x
+    };
+    res
+}
+
+function square(x: INT): INT {
+    x * x
+}
+ 
+input relation Cathetus1(len: INT)
+input relation Cathetus2(len: INT)
+input relation Hypotenuse(len: INT)
+
+output relation Triangular(cat1: INT, cat2: INT, hyp: INT)
+
+Triangular(cat1, cat2, hyp) :- Cathetus1(cat1),
+			       Cathetus2(cat2),
+			       Hypotenuse(hyp),
+                               ((square(cat1) + square(cat2)) == square(hyp)).

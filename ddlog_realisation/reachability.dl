@@ -1,9 +1,0 @@
-input relation Edges(src: string, dst: string, flag: bool)
-
-output relation ConnectedNodes(src: string, dst: string)
-index Reachability(src: string, dst: string) on ConnectedNodes(src, dst)  
-
-ConnectedNodes(src, dst) :- Edges(src, dst, true).
-ConnectedNodes(src, dst) :- ConnectedNodes(src, intermediate),
-                            Edges(intermediate, dst, true).
-

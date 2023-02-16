@@ -1,0 +1,3 @@
+/home/esvault/Projects/ddlog_c/c_realisation/cmake-build-debug/CMakeFiles/c_realisation.dir
+/home/esvault/Projects/ddlog_c/c_realisation/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/esvault/Projects/ddlog_c/c_realisation/cmake-build-debug/CMakeFiles/rebuild_cache.dir

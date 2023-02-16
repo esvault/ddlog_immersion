@@ -1,0 +1,11 @@
+start;
+insert Edges(0, 1);
+insert Edges(0, 1, 0);
+insert Edges("0", "1", true);
+insert Edges("1", "2", true);
+commit;
+dump ConnectedNodes;
+start; Edges("2", "3", true);
+insert Edges("2", "3", true);
+commit;
+dump ConnectedNodes;

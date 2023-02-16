@@ -1,0 +1,34 @@
+start;
+
+insert Node("node-1");
+insert Node("node-2");
+insert Node("node-3");
+
+insert Rsc("res-1");
+insert Rsc("res-2");
+insert Rsc("res-3");
+insert Rsc("res-4");
+
+insert LocationConstraint("cons-1", "res-1", "node-1", 100);
+insert LocationConstraint("cons-2", "res-1", "node-2", 300);
+insert LocationConstraint("cons-3", "res-1", "node-3", 200);
+insert LocationConstraint("cons-4", "res-2", "node-1", 100);
+insert LocationConstraint("cons-5", "res-2", "node-2", 150);
+insert LocationConstraint("cons-6", "res-2", "node-3", -200);
+insert LocationConstraint("cons-7", "res-3", "node-1", 100);
+insert LocationConstraint("cons-8", "res-3", "node-2", 500);
+insert LocationConstraint("cons-9", "res-4", "node-1", 100);
+
+insert ColocationConstraint("coloc-1", "res-1", "res-2");
+insert ColocationConstraint("coloc-2", "res-3", "res-4");
+
+insert OrderConstraint("ord-1", "res-1", "res-2");
+insert OrderConstraint("ord-2", "res-1", "res-2");
+insert OrderConstraint("ord-3", "res-3", "res-4");
+commit;
+
+dump LocationOut;
+dump ColocationOut;
+dump TotalLocation;
+dump StartActionOrder;
+

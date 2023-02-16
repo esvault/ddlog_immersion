@@ -1,10 +1,11 @@
-## Запуск
-- Установить 
-[DDlog](https://github.com/vmware/differential-datalog/blob/master/README.md#Installation).
-- Скомпилировать библиотеку для того, чтобы вызывать объекты DDlog из кода на C:
-``cd ddlog_realisation && make && cd ..``
-- Создать исполняемый файл: ``cd experiment && make``
-- Запустить исполняемый файл: ``./main``
+# DDlog examples
+
+В данном репозитории собираются примеры использования языка DDlog.
+
+Для запуска примеров потребуется установить [DDlog](https://github.com/vmware/differential-datalog/blob/master/README.md#Installation).
+
+В каждой папке есть скрипты для компиляции и запуска программ.
+
 
 
 
