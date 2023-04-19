@@ -1,0 +1,29 @@
+typedef INT = bit<64>
+typedef FLAG = bit<64>
+
+typedef Nullable<'A> = NULL
+		     | Val {value : 'A}
+
+typedef pe_resource_t = Resource {
+	id: INT
+}
+
+typedef pe_node_t = Node {
+	id: INT
+}
+
+typedef pe_action_s = Action {
+	id: INT,
+	task: string,
+	rsc: Nullable<pe_resource_t>,
+	node: Nullable<pe_node_t>,
+	flags: FLAG
+}
+
+input relation ResourseRel(res: pe_resource_t)
+input relation NodeRel(node: pe_node_t)
+input relation ActionRel(action: pe_action_s, act_before_id: INT, act_after_id: INT)
+		      
+output relation ActionOrder(left: INT, right: INT)
+
+ActionOrder(left, right) :- ActionRel(_, left, right).

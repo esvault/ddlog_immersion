@@ -1,0 +1,8 @@
+start;
+
+insert ActionRel(Action{1, "START", Val{Resource{1}}, Val{Node{1}}, 0}, 0, 2);
+insert ActionRel(Action{2, "START", Val{Resource{2}}, Val{Node{1}}, 0}, 1, 0);
+
+commit;
+
+dump ActionOrder;
