@@ -33,6 +33,10 @@ typedef pe_order_t = Order {
 	r_task: string
 }
 
+function is_set(action: ActionRel, flag: FLAG): bool {
+	(action.flags & flag) != 0
+}
+
 //======================= Отношения для основных сущностей pacemaker ========================
 
 input relation ResourseRel(id: INT)
@@ -43,6 +47,7 @@ primary key(x) (x.id)
 
 input relation ActionRel(id: INT, task: string, rsc: Nullable<INT>, node: Nullable<INT>, flags: FLAG)
 primary key(x) (x.id)
+
 
 
 //=================== Отношения для списков actions_before, actions_after ===================
@@ -66,6 +71,30 @@ ActionsAfter(id, l_id, r_id) :- InputActionsAfter(id, l_id, r_id).
 output relation ActionWrapper(action_id: INT, ordering_type: FLAG)
 
 ActionWrapper(id, 0) :- ActionRel(id, _, _, _, _).
+
+
+//================================== Отношения для флагов ===================================
+
+output relation ActionRequiresAny[ActionRel]
+ActionRequiresAny[action] :- ActionRel[action], is_set(action, 64'h01000).
+
+			 
+output relation ActionRunnable[ActionRel]
+ActionRunnable[action] :- ActionRel[action], is_set(action, 64'h00002).
+
+
+output relation ActionOptional[ActionRel]
+ActionOptional[action] :- ActionRel[action], is_set(action, 64'h00004).
+
+		      
+output relation ActionPseudo[ActionRel]
+ActionPseudo[action] :- ActionRel[action], is_set(action, 64'h00001).
+
+
+output relation UpdatedThen[ActionRel]
+output relation UpdatedFirst[ActionRel]
+
+		      
 
 
 //================================== Отношение для Order ====================================

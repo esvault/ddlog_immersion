@@ -1,7 +1,22 @@
 start;
 
-insert ActionRel(1, "START", Val{1}, Val{1}, 0);
-insert ActionRel(2, "START", Val{2}, Val{1}, 0);
+insert ActionRel(1,	"START",	Val{1}, 	Val{1},	4099);
+insert ActionRel(2,	"START",	Val{2}, 	Val{1},	2);
+insert ActionRel(3,	"RESTART",	Val{2}, 	NULL,	0);
+insert ActionRel(4,	"MONITOR",	NULL,	 	Val{1},	0);
+insert ActionRel(5,	"STOP",		Val{2}, 	Val{1},	0);
+insert ActionRel(6,	"STOP", 	Val{2}, 	Val{1},	0);
+
+
+commit;
+
+dump;
+
+start;
+
+modify ActionRel 1 <- ActionRel{.flags = 4098};
+modify ActionRel 6 <- ActionRel{.flags = 4};
+
 
 commit;
 
