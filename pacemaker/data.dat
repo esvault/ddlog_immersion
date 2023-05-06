@@ -1,11 +1,11 @@
 start;
 
-insert ActionRel(1,	"START",	Val{1}, 	Val{1},	4099);
-insert ActionRel(2,	"START",	Val{2}, 	Val{1},	2);
-insert ActionRel(3,	"RESTART",	Val{2}, 	NULL,	0);
-insert ActionRel(4,	"MONITOR",	NULL,	 	Val{1},	0);
-insert ActionRel(5,	"STOP",		Val{2}, 	Val{1},	0);
-insert ActionRel(6,	"STOP", 	Val{2}, 	Val{1},	0);
+insert ActionRel(1, Action{1,	"START",	Val{Resource{1}}, 	Val{Node{1}},	4099}, 0);
+insert ActionRel(2, Action{2,	"START",	Val{Resource{2}}, 	Val{Node{1}},	2}, 0);
+insert ActionRel(3, Action{3,	"RESTART",	Val{Resource{2}}, 	NULL,			0}, 0);
+insert ActionRel(4, Action{4,	"MONITOR",	NULL,	 			Val{Node{1}},	0}, 0);
+insert ActionRel(5, Action{5,	"STOP",		Val{Resource{2}}, 	Val{Node{1}},	0}, 0);
+insert ActionRel(6, Action{6,	"STOP", 	Val{Resource{2}}, 	Val{Node{1}},	0}, 0);
 
 
 commit;
@@ -14,8 +14,8 @@ dump;
 
 start;
 
-modify ActionRel 1 <- ActionRel{.flags = 4098};
-modify ActionRel 6 <- ActionRel{.flags = 4};
+modify ActionRel 1 <- ActionRel{.action = Action{1,	"START",	Val{Resource{1}}, 	Val{Node{1}},	4098}};
+
 
 
 commit;

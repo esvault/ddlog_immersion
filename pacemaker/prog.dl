@@ -1,5 +1,5 @@
 typedef INT = bit<64>
-typedef FLAG = bit<64>
+typedef FLAG = bit<32>
 
 typedef Nullable<'A> = NULL
 		     | Val {value : 'A}
@@ -20,6 +20,11 @@ typedef pe_action_t = Action {
 	flags: FLAG
 }
 
+typedef wrapper_t = Wrapper {
+	order_type: FLAG,
+	action: pe_action_t
+}
+
 typedef pe_order_t = Order {
 	id: INT,
 	flags: FLAG,
@@ -33,9 +38,17 @@ typedef pe_order_t = Order {
 	r_task: string
 }
 
-function is_set(action: ActionRel, flag: FLAG): bool {
-	(action.flags & flag) != 0
+function is_set(flags: FLAG, flag: FLAG): bool {
+	(flags & flag) != 0
 }
+
+function pe_action_optional(): FLAG { 32'h00004 }
+
+function pe_order_none(): FLAG { 0 }
+function pe_order_same_node(): FLAG { 32768 }
+function pe_order_then_cancels_first(): FLAG { 33554432 }
+function pe_order_implies_then_on_node(): FLAG { 32'h400 }
+
 
 //======================= Отношения для основных сущностей pacemaker ========================
 
@@ -45,24 +58,41 @@ primary key(x) (x.id)
 input relation NodeRel(id: INT)
 primary key(x) (x.id)
 
-input relation ActionRel(id: INT, task: string, rsc: Nullable<INT>, node: Nullable<INT>, flags: FLAG)
-primary key(x) (x.id)
+input relation ActionRel(id: INT, action: pe_action_t, tmp: FLAG)
+primary key(x) (x.action.id)
 
 
 
 //=================== Отношения для списков actions_before, actions_after ===================
 
-input relation InputActionsBefore(action_id: INT, l_action_id: INT, r_action_id: INT)
-primary key(x) (x.action_id, x.l_action_id)
+input relation InputActionsBefore(action: pe_action_t, wrapper: wrapper_t)
+primary key(x) (x.action.id, x.wrapper.action.id)
 
-input relation InputActionsAfter(action_id: INT, l_action_id: INT, r_action_id: INT)
-primary key(x) (x.action_id, x.l_action_id)
+input relation InputActionsAfter(action: pe_action_t, wrapper: wrapper_t)
+primary key(x) (x.action.id, x.wrapper.action.id)
 
-output relation ActionsBefore(action_id: INT, l_action_id: INT, r_action_id: INT)
-output relation ActionsAfter(action_id: INT, l_action_id: INT, r_action_id: INT)
+output relation ActionsBefore(action: pe_action_t, wrapper: wrapper_t)
+output relation ActionsAfter(action: pe_action_t, wrapper: wrapper_t)
 
-ActionsBefore(id, l_id, r_id) :- InputActionsBefore(id, l_id, r_id).
-ActionsAfter(id, l_id, r_id) :- InputActionsAfter(id, l_id, r_id).
+ActionsBefore(action, wrapper) :- InputActionsBefore(action, wrapper).
+ActionsAfter(action, wrapper) :- InputActionsAfter(action, wrapper).
+
+
+
+//=================== Отношения для списков actions_before, actions_after ===================
+
+input relation InputActionsBeforeLst(action_id: INT, lst: Vec<wrapper_t>)
+primary key(x) (x.action_id)
+
+input relation InputActionsAfterLst(action_id: INT, lst: Vec<wrapper_t>)
+primary key(x) (x.action_id)
+
+output relation ActionsBeforeLst(action_id: INT, lst: Vec<wrapper_t>)
+output relation ActionsAfterLst(action_id: INT, lst: Vec<wrapper_t>)
+
+ActionsBeforeLst(id, lst) :- InputActionsBeforeLst(id, lst).
+ActionsAfterLst(id, lst) :- InputActionsAfterLst(id, lst).
+
 
 
 //================================== Отношение для Wrapper ==================================
@@ -70,33 +100,35 @@ ActionsAfter(id, l_id, r_id) :- InputActionsAfter(id, l_id, r_id).
 
 output relation ActionWrapper(action_id: INT, ordering_type: FLAG)
 
-ActionWrapper(id, 0) :- ActionRel(id, _, _, _, _).
+// ActionWrapper(id, 0) :- ActionRel(id, _, _, _, _).
+
 
 
 //================================== Отношения для флагов ===================================
 
-output relation ActionRequiresAny[ActionRel]
-ActionRequiresAny[action] :- ActionRel[action], is_set(action, 64'h01000).
+output relation ActionRequiresAny(action: pe_action_t)
+ActionRequiresAny(action) :- ActionRel(_,action,_), is_set(action.flags, 32'h01000).
 
 			 
-output relation ActionRunnable[ActionRel]
-ActionRunnable[action] :- ActionRel[action], is_set(action, 64'h00002).
+output relation ActionRunnable(action: pe_action_t)
+ActionRunnable(action) :- ActionRel(_,action,_), is_set(action.flags, 32'h00002).
 
 
-output relation ActionOptional[ActionRel]
-ActionOptional[action] :- ActionRel[action], is_set(action, 64'h00004).
+output relation ActionOptional(action: pe_action_t)
+ActionOptional(action) :- ActionRel(_,action,_), is_set(action.flags, 32'h00004).
 
-		      
-output relation ActionPseudo[ActionRel]
-ActionPseudo[action] :- ActionRel[action], is_set(action, 64'h00001).
-
-
-output relation UpdatedThen[ActionRel]
-output relation UpdatedFirst[ActionRel]
+ActionOptional(first.action) :- OrderThenCancelsFirst(then, first),
+								ActionRel(_,then,_),
+								not is_set(then.flags, pe_action_optional()).
+						 		
+						 		
 
 		      
+output relation ActionPseudo(action: pe_action_t)
+ActionPseudo(action) :- ActionRel(_,action,_), is_set(action.flags, 32'h00001).
 
-
+		      
+		      
 //================================== Отношение для Order ====================================
 
 input relation OrderRel(
@@ -111,3 +143,22 @@ input relation OrderRel(
 	r_action_id: INT,
 	r_task: string
 )
+
+output relation OrderNone(action: pe_action_t, wrapper: wrapper_t)
+OrderNone(action, wrapper) :- ActionsBefore(action, wrapper@Wrapper{.order_type=t}),
+							  t == pe_order_none(). 
+							  
+OrderNone(action, wrapper) :- ActionsBefore(action, wrapper@Wrapper{.order_type=t}),
+							  is_set(action.flags, pe_order_same_node()).
+
+
+output relation OrderThenCancelsFirst(action: pe_action_t, wrapper: wrapper_t)							  						  
+OrderThenCancelsFirst(action, wrapper) :- ActionsBefore(action, wrapper@Wrapper{.order_type=t}),
+							 		 	  is_set(t, pe_order_then_cancels_first()).
+							 		 
+							 		 
+output relation OrderImpliesThenOnNode(action: pe_action_t, wrapper: wrapper_t)
+OrderImpliesThenOnNode(action, wrapper):- ActionsBefore(action, wrapper@Wrapper{.order_type=t}),
+										  is_set(t, pe_order_implies_then_on_node()).
+
+							 		
