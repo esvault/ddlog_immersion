@@ -1,31 +1,31 @@
 import group
 
-typedef UINT = u64
-typedef ID = u64
-typedef FLAGS = bit<64>
+typedef uint_t = u64
+typedef id_t = u64
+typedef flag_t = bit<64>
 
 // ======================= Resource & Node =======================
 
-typedef rsc_variant = Primitive
+typedef rsc_variant_t = Primitive
                     | Group
                     | Clone
                     | Bundle
 
-input relation Rsc(id: ID, variant: rsc_variant)
+input relation Rsc(id: id_t, variant: rsc_variant_t)
 primary key(x) (x.id)
 
-input relation Node(id: ID)
+input relation Node(id: id_t)
 primary key(x) (x.id)
 
 
 // ======================= Location & Colocation =======================
 
-input relation LocationConstraint (id: ID, rsc_id: ID, node_id: ID, score: float)
-input relation ColocationConstraint (id: ID, rsc_id: ID, with_rsc: ID)
+input relation LocationConstraint (id: id_t, rsc_id: id_t, node_id: id_t, score: float)
+input relation ColocationConstraint (id: id_t, rsc_id: id_t, with_rsc: id_t)
 
-relation Location (rsc_id: ID, node_id: ID)
-relation Colocation (rsc_id: ID, with_rsc: ID, node_id: ID)
-output relation TotalLocation (rsc_id: ID, node_id: ID)
+relation Location (rsc_id: id_t, node_id: id_t)
+relation Colocation (rsc_id: id_t, with_rsc: id_t, node_id: id_t)
+output relation TotalLocation (rsc_id: id_t, node_id: id_t)
 
 
 Location (rsc_id, target_node) :- 
@@ -52,22 +52,29 @@ TotalLocation (rsc_id, node_id) :-
 
 // ======================= Ordering (Actions graph) =======================
 
+typedef task_t = 
+    Start   | Started  |
+    Stop    | Stopped  |
+    Promote | Promoted |
+    Demote  | Demoted  |
+    Monitor
+
 input relation Action(
-    id: ID, 
-    rsc_id: Option<ID>, 
-    task: string,
-    interval: UINT,
-    node_id: Option<ID>, 
-    flags: FLAGS,
-    deps_num: UINT, // required number of runnable before actions
+    id: id_t, 
+    rsc_id: Option<id_t>, 
+    task: task_t,
+    interval: uint_t,
+    node_id: Option<id_t>, 
+    flags: flag_t,
+    deps_num: uint_t, // required number of runnable before actions
 )
 primary key(x) (x.id)
 
-input relation ActionsGraph(first_id: ID, then_id: ID, order_type: FLAGS)
+input relation ActionsGraph(first_id: id_t, then_id: id_t, order_type: flag_t)
 
 
-output relation RunnableActionsBefore(id: ID, runnable_dependencies_num: UINT)
-output relation RunnableActions(id: ID)
+output relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t)
+output relation RunnableActions(id: id_t)
 
 // TODO: Как понять, сколько из actions_before уже в RunnableActions
 RunnableActionsBefore(then_id, num) :-

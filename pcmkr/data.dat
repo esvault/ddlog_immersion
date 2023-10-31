@@ -30,11 +30,11 @@ commit;
 # =================== Action Graph ===================
 
 start;
-insert Action(.id=1, .rsc_id=ddlog_std::Some{1}, .task="start", .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
-insert Action(.id=2, .rsc_id=ddlog_std::Some{2}, .task="start", .interval=0, .node_id=ddlog_std::None,    .flags=0, .deps_num=0),
-insert Action(.id=3, .rsc_id=ddlog_std::None,    .task="start", .interval=0, .node_id=ddlog_std::Some{2}, .flags=0, .deps_num=0),
-insert Action(.id=4, .rsc_id=ddlog_std::Some{3}, .task="start", .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
-insert Action(.id=5, .rsc_id=ddlog_std::Some{1}, .task="stop",  .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
+insert Action(.id=1, .rsc_id=ddlog_std::Some{1}, .task=Start, .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
+insert Action(.id=2, .rsc_id=ddlog_std::Some{2}, .task=Start, .interval=0, .node_id=ddlog_std::None,    .flags=0, .deps_num=0),
+insert Action(.id=3, .rsc_id=ddlog_std::Some{4}, .task=Start, .interval=0, .node_id=ddlog_std::Some{2}, .flags=0, .deps_num=0),
+insert Action(.id=4, .rsc_id=ddlog_std::Some{3}, .task=Start, .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
+insert Action(.id=5, .rsc_id=ddlog_std::Some{1}, .task=Stop,  .interval=0, .node_id=ddlog_std::Some{1}, .flags=0, .deps_num=0),
 
 insert ActionsGraph(.first_id=2, .then_id=1, .order_type=0),
 insert ActionsGraph(.first_id=1, .then_id=3, .order_type=0),
