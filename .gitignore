@@ -3,7 +3,6 @@
 /c_realisation/CMakeLists.txt
 .idea
 /ddlog_c/ddlog_realisation/reachability_ddlog/
-/ddlog_pacemaker/prog_ddlog
-/pacemaker/prog_ddlog
-/pacemaker/info
+/ddlog_pacemaker
+/pacemaker
 /pcmkr/prog_ddlog
