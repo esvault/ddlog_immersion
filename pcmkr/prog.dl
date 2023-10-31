@@ -1,0 +1,82 @@
+import group
+
+typedef UINT = u64
+typedef ID = u64
+typedef FLAGS = bit<64>
+
+// ======================= Resource & Node =======================
+
+typedef rsc_variant = Primitive
+                    | Group
+                    | Clone
+                    | Bundle
+
+input relation Rsc(id: ID, variant: rsc_variant)
+primary key(x) (x.id)
+
+input relation Node(id: ID)
+primary key(x) (x.id)
+
+
+// ======================= Location & Colocation =======================
+
+input relation LocationConstraint (id: ID, rsc_id: ID, node_id: ID, score: float)
+input relation ColocationConstraint (id: ID, rsc_id: ID, with_rsc: ID)
+
+relation Location (rsc_id: ID, node_id: ID)
+relation Colocation (rsc_id: ID, with_rsc: ID, node_id: ID)
+output relation TotalLocation (rsc_id: ID, node_id: ID)
+
+
+Location (rsc_id, target_node) :- 
+	LocationConstraint (.rsc_id = rsc_id, .node_id = node_id, .score = score),
+	var rsc_group = (node_id, score).group_by(rsc_id),
+	(var target_node, var max_score) = rsc_group.arg_max(|node_score| node_score.1).
+
+Location (rsc_id, target_node) :- 
+	Rsc(.id=rsc_id), 
+	Node(target_node),
+	not LocationConstraint (_, rsc_id, _, _).
+
+Colocation (rsc_id, with_rsc, node_id) :-
+	ColocationConstraint (.rsc_id = rsc_id, .with_rsc = with_rsc),
+	Location(with_rsc, node_id).
+
+TotalLocation (rsc_id, node_id) :-
+	Colocation (.rsc_id = rsc_id, .node_id = node_id).
+
+TotalLocation (rsc_id, node_id) :-
+	Location (.rsc_id = rsc_id, .node_id = node_id),
+	not Colocation (rsc_id, _, _).
+
+
+// ======================= Ordering (Actions graph) =======================
+
+input relation Action(
+    id: ID, 
+    rsc_id: Option<ID>, 
+    task: string,
+    interval: UINT,
+    node_id: Option<ID>, 
+    flags: FLAGS,
+    deps_num: UINT, // required number of runnable before actions
+)
+primary key(x) (x.id)
+
+input relation ActionsGraph(first_id: ID, then_id: ID, order_type: FLAGS)
+
+
+output relation RunnableActionsBefore(id: ID, runnable_dependencies_num: UINT)
+output relation RunnableActions(id: ID)
+
+// TODO: Как понять, сколько из actions_before уже в RunnableActions
+RunnableActionsBefore(then_id, num) :-
+    ActionsGraph(first_id, then_id, _),
+    var num = first_id.group_by(then_id).count(|x| true). // Подсчитывается количество actions_before, а не runnable
+
+
+RunnableActions(then_id) :-
+    ActionsGraph(.first_id=first_id, .then_id=then_id),
+    RunnableActionsBefore(then_id, num),
+    Action(.id=then_id, .deps_num=deps_num),
+    (num >= deps_num).
