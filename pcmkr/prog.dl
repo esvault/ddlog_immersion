@@ -1,8 +1,6 @@
 import group
 
-typedef uint_t = u64
 typedef id_t = u64
-typedef flag_t = bit<64>
 
 // ======================= Resource & Node =======================
 
@@ -52,6 +50,8 @@ TotalLocation (rsc_id, node_id) :-
 
 // ======================= Ordering (Actions graph) =======================
 
+typedef uint_t = u64
+typedef flag_t = bit<64>
 typedef task_t = 
     Start   | Started  |
     Stop    | Stopped  |
@@ -59,6 +59,17 @@ typedef task_t =
     Demote  | Demoted  |
     Monitor
 
+// ==== FLAGS ====
+function pseudo_flag(): flag_t       = 'h00001
+function runnable_flag(): flag_t     = 'h00002
+function optional_flag(): flag_t     = 'h00004
+function print_always_flag(): flag_t = 'h00008
+function requires_any_flag(): flag_t = 'h01000
+
+// ==== Relations ====
+/*
+    Actions data needed for ordering (nodes in action graph)
+*/
 input relation Action(
     id: id_t, 
     rsc_id: Option<id_t>, 
@@ -70,20 +81,41 @@ input relation Action(
 )
 primary key(x) (x.id)
 
+/*
+    Actions ordering data (edges in anction graph)
+*/
 input relation ActionsGraph(first_id: id_t, then_id: id_t, order_type: flag_t)
 
+// Intermediate relations
+relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t, before: Vec<id_t>)
 
-output relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t)
+// Output relations
 output relation RunnableActions(id: id_t)
 
-// TODO: Как понять, сколько из actions_before уже в RunnableActions
-RunnableActionsBefore(then_id, num) :-
-    ActionsGraph(first_id, then_id, _),
-    var num = first_id.group_by(then_id).count(|x| true). // Подсчитывается количество actions_before, а не runnable
 
+// ==== Rules ====
+RunnableActionsBefore(then_id, num, lst) :-
+    ActionsGraph(first_id, then_id, _),
+    RunnableActions(first_id),
+    var lst = first_id.group_by(then_id).to_vec(),
+    var num = len(lst).
+
+RunnableActions(id) :- 
+    Action(.id=id, .flags=flags),
+    is_set(flags, runnable_flag()).
 
 RunnableActions(then_id) :-
     ActionsGraph(.first_id=first_id, .then_id=then_id),
-    RunnableActionsBefore(then_id, num),
+    RunnableActionsBefore(then_id, num, _),
     Action(.id=then_id, .deps_num=deps_num),
     (num >= deps_num).
+
+function is_set(bit_vec: flag_t, flag: flag_t): bool {
+    (~bit_vec & flag) == 0
+}
+
+// ========== TMP ==========
+
+output relation PseudoAction(id: id_t)
+
+PseudoAction(action.id) :- action in Action(.flags=flags), is_set(flags, pseudo_flag()).
