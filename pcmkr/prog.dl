@@ -88,21 +88,36 @@ input relation ActionsGraph(first_id: id_t, then_id: id_t, order_type: flag_t)
 
 // Intermediate relations
 relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t, before: Vec<id_t>)
+relation RunnableActions(id: id_t)
+relation UnrunnableActions(id: id_t)
+relation OptionalActions(id: id_t)
+
+relation CloneActions[Action]
+
 
 // Output relations
-output relation RunnableActions(id: id_t)
-
+output relation EdgesToDelete(from: id_t, to: id_t)
+output relation EdgesToInsert(from: id_t, to: id_t)
 
 // ==== Rules ====
 RunnableActionsBefore(then_id, num, lst) :-
     ActionsGraph(first_id, then_id, _),
-    RunnableActions(first_id),
+    action in Action(.id=first_id),
+    is_runnable(action),
     var lst = first_id.group_by(then_id).to_vec(),
     var num = len(lst).
 
 RunnableActions(id) :- 
     Action(.id=id, .flags=flags),
-    is_set(flags, runnable_flag()).
+    not UnrunnableActions(id).
+
+UnrunnableActions(id) :-
+    Action(.id=id, .flags=flags),
+    not is_set(flags, runnable_flag()).
+
+OptionalActions(id) :-
+    Action(.id=id, .flags=flags),
+    is_set(flags, optional_flag()).
 
 RunnableActions(then_id) :-
     ActionsGraph(.first_id=first_id, .then_id=then_id),
@@ -110,12 +125,45 @@ RunnableActions(then_id) :-
     Action(.id=then_id, .deps_num=deps_num),
     (num >= deps_num).
 
+
+EdgesToDelete(first_action.id, then_action.id),
+EdgesToInsert(find_id, then_action.id) :-
+    ActionsGraph(.first_id=first_id, .then_id=then_id),
+    CloneActions[first_action], first_action.id == first_id, is_pseudo(first_action),
+    CloneActions[then_action], then_action.id == then_id, is_pseudo(then_action),
+    first_action.task == Stop and then_action.task == Stop,
+    ActionsGraph(first_id, find_id, _), Action(.id=find_id, .task=Stopped).
+
+EdgesToDelete(first_action.id, then_action.id),
+EdgesToInsert(find_id, then_action.id) :-
+    ActionsGraph(.first_id=first_id, .then_id=then_id),
+    CloneActions[first_action], first_action.id == first_id, is_pseudo(first_action),
+    CloneActions[then_action], then_action.id == then_id, is_pseudo(then_action),
+    first_action.task == Start and then_action.task == Start,
+    ActionsGraph(first_id, find_id, _), Action(.id=find_id, .task=Started).
+
+  
+CloneActions[action] :-
+    Action[action],
+    var rsc_id = unwrap_or(action.rsc_id, -1),
+    Rsc(.id=rsc_id, .variant=Clone).
+
 function is_set(bit_vec: flag_t, flag: flag_t): bool {
     (~bit_vec & flag) == 0
 }
 
-// ========== TMP ==========
+function is_pseudo(action: Action): bool {
+    is_set(action.flags, pseudo_flag())
+}
 
-output relation PseudoAction(id: id_t)
+function is_runnable(action: Action): bool {
+    is_set(action.flags, runnable_flag())
+}
 
-PseudoAction(action.id) :- action in Action(.flags=flags), is_set(flags, pseudo_flag()).
+function is_optional(action: Action): bool {
+    is_set(action.flags, optional_flag())
+}
+
+function is_print_always(action: Action): bool {
+    is_set(action.flags, print_always_flag())
+}
