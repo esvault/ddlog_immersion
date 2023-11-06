@@ -9,7 +9,7 @@ typedef rsc_variant_t = Primitive
                     | Clone
                     | Bundle
 
-input relation Rsc(id: id_t, variant: rsc_variant_t)
+input relation Rsc(id: id_t, variant: rsc_variant_t, children: Vec<id_t>)
 primary key(x) (x.id)
 
 input relation Node(id: id_t)
@@ -87,13 +87,17 @@ primary key(x) (x.id)
 input relation ActionsGraph(first_id: id_t, then_id: id_t, order_type: flag_t)
 
 // Intermediate relations
+relation PrimitiveActions(action: Ref<Action>)
+relation CloneActions(action: Ref<Action>)
+
+relation ClonePrimitiveStartActions(clone: Ref<Action>, child: Ref<Action>)
+relation CloneCloneStartActions(first: Ref<Action>, then: Ref<Action>)
+
 relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t, before: Vec<id_t>)
 relation RunnableActions(action: Ref<Action>)
 relation UnrunnableActions(action: Ref<Action>)
 relation OptionalActions(action: Ref<Action>)
 
-relation PrimitiveActions(action: Ref<Action>)
-relation CloneActions(action: Ref<Action>)
 
 
 // Output relations
@@ -101,6 +105,31 @@ output relation EdgesToDelete(from: id_t, to: id_t)
 output relation EdgesToInsert(from: id_t, to: id_t)
 
 // ==== Rules ====
+CloneActions(action) :-
+    action in &Action(),
+    action.node_id == None,
+    var rsc_id = unwrap_or(action.rsc_id, -1),
+    Rsc(.id=rsc_id, .variant=Clone).
+
+PrimitiveActions(action) :-
+    action in &Action(),
+    var rsc_id = unwrap_or(action.rsc_id, -1),
+    Rsc(.id=rsc_id, .variant=Primitive).
+
+ClonePrimitiveStartActions(clone, child) :-
+    ActionsGraph(first_id, then_id, _),
+    CloneActions(clone @ &Action{.id=first_id, .rsc_id=rsc_id, .task=Start}),
+    Rsc(.id=unwrap_or(rsc_id, -1), .children=children),
+    var child_id = FlatMap(children),
+    child in &Action(.id=then_id, .rsc_id=Some{child_id}, .task=Start).
+
+
+CloneCloneStartActions(first, then) :-
+    ActionsGraph(first_id, then_id, _),
+    CloneActions(first @ &Action{.id=first_id, .task=Start}),
+    CloneActions(then @ &Action{.id= then_id, .task=Start}).
+
+
 RunnableActionsBefore(then_id, num, lst) :-
     ActionsGraph(first_id, then_id, _),
     action in &Action(.id=first_id),
@@ -134,24 +163,18 @@ EdgesToInsert(find_id, then_id) :-
     CloneActions(&Action{.id= then_id, .task=Stop}),
     ActionsGraph(first_id, find_id, _), &Action(.id=find_id, .task=Stopped).
 
+
 EdgesToDelete(first_id, then_id),
 EdgesToInsert(find_id, then_id) :-
-    ActionsGraph(.first_id=first_id, .then_id=then_id),
-    CloneActions(&Action{.id=first_id, .task=Start}),
-    CloneActions(&Action{.id= then_id, .task=Start}),
+    CloneCloneStartActions(&Action{.id=first_id}, &Action{.id=then_id}),
     ActionsGraph(first_id, find_id, _), &Action(.id=find_id, .task=Started).
 
-  
-CloneActions(action) :-
-    action in &Action(),
-    action.node_id == None,
-    var rsc_id = unwrap_or(action.rsc_id, -1),
-    Rsc(.id=rsc_id, .variant=Clone).
 
-PrimitiveActions(action) :-
-    action in &Action(),
-    var rsc_id = unwrap_or(action.rsc_id, -1),
-    Rsc(.id=rsc_id, .variant=Primitive).
+EdgesToInsert(primitive_first_id, primitive_then_id) :-
+    CloneCloneStartActions(&Action{.id=first_id, .rsc_id=first_clone}, &Action{.id=then_id, .rsc_id=then_clone}),
+    ClonePrimitiveStartActions(&Action{.id=first_id}, &Action{.id=primitive_first_id, .node_id=node_id}),
+    ClonePrimitiveStartActions(&Action{.id=then_id}, &Action{.id=primitive_then_id, .node_id=node_id}).
+
 
 function to_string(action: Action): string {
     "action.id"
