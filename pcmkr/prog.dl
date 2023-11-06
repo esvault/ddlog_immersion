@@ -153,6 +153,10 @@ PrimitiveActions(action) :-
     var rsc_id = unwrap_or(action.rsc_id, -1),
     Rsc(.id=rsc_id, .variant=Primitive).
 
+function to_string(action: Action): string {
+    "action.id"
+}
+
 function is_set(bit_vec: flag_t, flag: flag_t): bool {
     (~bit_vec & flag) == 0
 }
