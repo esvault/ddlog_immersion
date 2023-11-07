@@ -90,9 +90,21 @@ input relation ActionsGraph(first_id: id_t, then_id: id_t, order_type: flag_t)
 relation PrimitiveActions(action: Ref<Action>)
 relation CloneActions(action: Ref<Action>)
 
+/*
+    Edges where first_action is start clone and then_action is 
+    start of clone's child
+*/
 relation ClonePrimitiveStartActions(clone: Ref<Action>, child: Ref<Action>)
+
+/*
+    Edges where first_action is start clone0 and then_action is 
+    start clone1, relative to ordering constraints.
+*/
 relation CloneCloneStartActions(first: Ref<Action>, then: Ref<Action>)
 
+/*
+    Action must have appropriate number of runnable before action to be runnable itself.
+*/
 relation RunnableActionsBefore(id: id_t, runnable_dependencies_num: uint_t, before: Vec<id_t>)
 relation RunnableActions(action: Ref<Action>)
 relation UnrunnableActions(action: Ref<Action>)
@@ -101,6 +113,9 @@ relation OptionalActions(action: Ref<Action>)
 
 
 // Output relations
+/*
+    These relations are actions graph delta
+*/
 output relation EdgesToDelete(from: id_t, to: id_t)
 output relation EdgesToInsert(from: id_t, to: id_t)
 
@@ -121,7 +136,7 @@ ClonePrimitiveStartActions(clone, child) :-
     CloneActions(clone @ &Action{.id=first_id, .rsc_id=rsc_id, .task=Start}),
     Rsc(.id=unwrap_or(rsc_id, -1), .children=children),
     var child_id = FlatMap(children),
-    child in &Action(.id=then_id, .rsc_id=Some{child_id}, .task=Start).
+    PrimitiveActions(child @ &Action{.id=then_id, .rsc_id=Some{child_id}, .task=Start}).
 
 
 CloneCloneStartActions(first, then) :-
