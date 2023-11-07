@@ -9,65 +9,63 @@
       cib-last-written="Thu Aug 11 16:53:06 2022" 
       dc-uuid="0" >
       
-      <configuration>
-      	<crm_config>
-					<cluster_property_set id="cib-bootstrap-options">
-						<nvpair id="cib-bootstrap-options-stonith-enabled-stonith-enabled" name="stonith-enabled" value="false"/>
-						<nvpair id="cib-bootstrap-options-node-action-limit-node-action-limit" name="node-action-limit" value="100"/>
-					</cluster_property_set>
-				</crm_config>
-      
+	<configuration>
+		<crm_config>
+			<cluster_property_set id="cib-bootstrap-options">
+				<nvpair id="cib-bootstrap-options-stonith-enabled-stonith-enabled" name="stonith-enabled" value="false"/>
+				<nvpair id="cib-bootstrap-options-node-action-limit-node-action-limit" name="node-action-limit" value="100"/>
+			</cluster_property_set>
+		</crm_config>
       	<nodes>
-					<node id="0" uname="node0">
-						<instance_attributes id="nodes-0">
-						  <nvpair id="nodes-0-node-type" name="node-type" value="storage-processor"/>
-						</instance_attributes>
-					</node>
-					<node id="1" uname="node1">
-						<instance_attributes id="nodes-1">
-						  <nvpair id="nodes-1-node-type" name="node-type" value="storage-processor"/>
-						</instance_attributes>
-					</node>
-				</nodes>
-		
-				<resources>
-					<clone id="mlun-clone">
-						<meta_attributes id="mlun-clone-meta_attributes">
-							<nvpair id="mlun-clone-meta_attributes-target-role" name="target-role" value="Started"/>
-							<nvpair id="mlun-clone-meta_attributes-interleave" name="interleave" value="true"/>
-						</meta_attributes>
-						<primitive id="mlun" class="ocf" provider="yadro" type="mapped-lun">
-							<instance_attributes id="mlun-instance_attributes">
-								<nvpair id="mlun-instance_attributes-lun" name="lun" value="lun"/>
-							</instance_attributes>
-							<operations>
-								<op id="mlun-stop-0s" name="stop" interval="0s" timeout="15s"/>
-								<op id="mlun-start-0s" name="start" interval="0s" timeout="60s"/>
-								<op id="mlun-monitor-30s" name="monitor" interval="30s" timeout="10s"/>
-							</operations>
-						</primitive>
-					</clone>
-					<clone id="lun-clone">
-						<meta_attributes id="lun-clone-meta_attributes">
-							<nvpair id="lun-clone-meta_attributes-target-role" name="target-role" value="Started"/>
-							<nvpair id="lun-clone-meta_attributes-interleave" name="interleave" value="true"/>
-						</meta_attributes>
-						<primitive id="lun" class="ocf" provider="yadro" type="lun">
-							<instance_attributes id="lun-instance_attributes">
-								<nvpair id="lun-instance_attributes-volume" name="volume" value="vol-000-00"/>
-							</instance_attributes>
-							<operations>
-								<op id="lun-stop-0s" name="stop" interval="0s" timeout="15s"/>
-								<op id="lun-start-0s" name="start" interval="0s" timeout="60s"/>
-								<op id="lun-monitor-30s" name="monitor" interval="30s" timeout="10s"/>
-							</operations>
-						</primitive>
-					</clone>
-		  	</resources>
-		  	<constraints>
-		  		<rsc_colocation id="mlun-with-lun" rsc="mlun-clone" with-rsc="lun-clone"/>
-		  		<rsc_order id="mlun-after-lun" first="lun-clone" then="mlun-clone"/>
-		  	</constraints>
-      </configuration>
+			<node id="0" uname="node0">
+				<instance_attributes id="nodes-0">
+					<nvpair id="nodes-0-node-type" name="node-type" value="storage-processor"/>
+				</instance_attributes>
+			</node>
+			<node id="1" uname="node1">
+				<instance_attributes id="nodes-1">
+				  <nvpair id="nodes-1-node-type" name="node-type" value="storage-processor"/>
+				</instance_attributes>
+			</node>
+		</nodes>
+		<resources>
+			<clone id="mlun-clone">
+				<meta_attributes id="mlun-clone-meta_attributes">
+					<nvpair id="mlun-clone-meta_attributes-target-role" name="target-role" value="Started"/>
+					<nvpair id="mlun-clone-meta_attributes-interleave" name="interleave" value="true"/>
+				</meta_attributes>
+				<primitive id="mlun" class="ocf" provider="yadro" type="mapped-lun">
+					<instance_attributes id="mlun-instance_attributes">
+						<nvpair id="mlun-instance_attributes-lun" name="lun" value="lun"/>
+					</instance_attributes>
+					<operations>
+						<op id="mlun-stop-0s" name="stop" interval="0s" timeout="15s"/>
+						<op id="mlun-start-0s" name="start" interval="0s" timeout="60s"/>
+						<op id="mlun-monitor-30s" name="monitor" interval="30s" timeout="10s"/>
+					</operations>
+				</primitive>
+			</clone>
+			<clone id="lun-clone">
+				<meta_attributes id="lun-clone-meta_attributes">
+					<nvpair id="lun-clone-meta_attributes-target-role" name="target-role" value="Started"/>
+					<nvpair id="lun-clone-meta_attributes-interleave" name="interleave" value="true"/>
+				</meta_attributes>
+				<primitive id="lun" class="ocf" provider="yadro" type="lun">
+					<instance_attributes id="lun-instance_attributes">
+						<nvpair id="lun-instance_attributes-volume" name="volume" value="vol-000-00"/>
+					</instance_attributes>
+					<operations>
+						<op id="lun-stop-0s" name="stop" interval="0s" timeout="15s"/>
+						<op id="lun-start-0s" name="start" interval="0s" timeout="60s"/>
+						<op id="lun-monitor-30s" name="monitor" interval="30s" timeout="10s"/>
+					</operations>
+				</primitive>
+			</clone>
+		</resources>
+		<constraints>
+			<rsc_colocation id="mlun-with-lun" rsc="mlun-clone" with-rsc="lun-clone"/>
+			<rsc_order id="mlun-after-lun" first="lun-clone" then="mlun-clone"/>
+		</constraints>
+    </configuration>
       
 </cib>
