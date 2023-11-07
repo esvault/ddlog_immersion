@@ -15,3 +15,21 @@
 - `data.dat` --- набор входных данных для демонстрации работоспособности
 - `run.sh` --- скрипт для компиляции и запуска
 - `sched_io` --- содержит cib (вход для планировщика pacemaker) и представления графа действий до и после обновлений
+
+
+## Результаты
+
+Вход программы --- файл `data.dat`, написан вручную при помощи `sched_io/before_updating.svg` и логов, однако его можно научиться генерировать. Вывод программы:
+
+```
+EdgesToDelete:
+EdgesToDelete{.from = 11, .to = 19}: +1
+EdgesToDelete{.from = 17, .to = 9}: +1
+EdgesToInsert:
+EdgesToInsert{.from = 12, .to = 19}: +1
+EdgesToInsert{.from = 13, .to = 5}: +1
+EdgesToInsert{.from = 15, .to = 7}: +1
+EdgesToInsert{.from = 18, .to = 9}: +1
+```
+
+В графе действий после обновлений `sched_io/after_updating.svg` добавлены и удалены перечисленные ребра.
